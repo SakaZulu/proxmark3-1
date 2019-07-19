@@ -351,7 +351,7 @@ void flash_suggest_update_flasher(void) {
 }
 
 // Go into flashing mode
-int flash_start_flashing(int enable_bl_writes, char *serial_port_name, uint32_t *chipinfo) {
+int flash_start_flashing(int enable_bl_writes, char *serial_port_name, uint32_t *chipinfo, bool *bl_allow_512k_writes) {
     uint32_t state;
 
     if (enter_bootloader(serial_port_name) < 0)
@@ -391,13 +391,13 @@ int flash_start_flashing(int enable_bl_writes, char *serial_port_name, uint32_t 
         flash_suggest_update_bootloader();
     }
 
-    bool allow_512k_writes = false;
+    *bl_allow_512k_writes = false;
     if (BL_VERSION_MAJOR(version) >= BL_VERSION_MAJOR(BL_VERSION_1_0_0)) {
-        allow_512k_writes = true;
+        *bl_allow_512k_writes = true;
     }
 
     uint32_t flash_end = FLASH_START + AT91C_IFLASH_PAGE_SIZE * AT91C_IFLASH_NB_OF_PAGES / 2;
-    if ((((*chipinfo & 0xF00) >> 8) > 9) && allow_512k_writes) {
+    if ((((*chipinfo & 0xF00) >> 8) > 9) && *bl_allow_512k_writes) {
         flash_end = FLASH_START + AT91C_IFLASH_PAGE_SIZE * AT91C_IFLASH_NB_OF_PAGES;
     }
 

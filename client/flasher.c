@@ -127,7 +127,8 @@ int main(int argc, char **argv) {
     }
 
     uint32_t chipid = 0;
-    res = flash_start_flashing(can_write_bl, serial_port_name, &chipid);
+    bool bl_allow_512k_writes;
+    res = flash_start_flashing(can_write_bl, serial_port_name, &chipid, &bl_allow_512k_writes);
     if (res < 0) {
         ret = -1;
         goto finish;
@@ -136,10 +137,15 @@ int main(int argc, char **argv) {
     int mem_avail = chipid_to_mem_avail(chipid);
     if (mem_avail != 0) {
         PrintAndLogEx(NORMAL, "Available memory on this board: %uK bytes\n", mem_avail);
+        if ((mem_avail > 256) && (!bl_allow_512k_writes)) {
+            PrintAndLogEx(ERR, _RED_("Your bootloader does not support writing above 256k"));
+            flash_suggest_update_bootloader();
+            mem_avail = 256; //that's all the bootloader can handle
+        }
     } else {
         PrintAndLogEx(NORMAL, "Available memory on this board: "_RED_("UNKNOWN")"\n");
         PrintAndLogEx(ERR, _RED_("Note: Your bootloader does not understand the new CHIP_INFO command"));
-        PrintAndLogEx(ERR, _RED_("It is recommended that you update your bootloader") "\n");
+        flash_suggest_update_bootloader();
         mem_avail = 256; //we default to a low value
     }
 
